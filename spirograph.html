@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<head>
+	<title>spiro</title>
+</head>
+<body>
+	<canvas id="c" width="800" height="800" style="margin: 0 auto; display: block; border:solid;">no canvas for you</canvas>
+
+	<script>
+	(function() {
+		"use strict";
+
+		var canvas = document.getElementById("c");
+		var ctx = canvas.getContext("2d");
+
+		function gcd(a,b) {
+			var r = a % b;
+			if(r == 0) return b;
+			else return gcd(b, r);
+		}
+
+		function gcdList(integers) {
+			var _gcd = integers[0];
+			for(var i = 1; i < integers.length; i++) {
+				_gcd = gcd(_gcd, integers[i]);
+			}
+			return _gcd;
+		}
+
+		function lcm(integers) {
+			var prod = 1;
+			for(var i = 0; i < integers.length; i++) {
+				prod *= integers[i];
+			}
+			prod /= gcdList(integers);
+			return prod;
+		}
+
+		function SpiroGraph(pos, radius, integers, orientations, angles, draws) {
+			this.pos = pos;
+			this.radius = radius;
+			this.integers = integers;
+			this.orientations = orientations;
+			this.angles = angles;
+			this.draws = draws;
+
+			this.ratio = [];
+			for(var i = 0; i < this.integers.length; i++) {
+				this.ratio.push(this.integers[i]/this.integers[0]);
+			}
+
+			this.radii = [];
+			for(var i = 0; i < this.ratio.length; i++) {
+				this.radii.push(this.ratio[i]*this.radius);
+			}
+
+			this.epsilon = 2*Math.PI/180;
+
+			this.dAngles = [];
+			for(var i = 0; i < this.angles.length; i++) {
+				this.dAngles.push(this.ratio[i]*this.epsilon);
+			}
+
+			this.epsilon = 2*Math.PI/9;
+
+			console.log("ratio: " + this.ratio + "\nradii: " + this.radii + "\ndAngles: " + this.dAngles);
+		}
+
+		SpiroGraph.prototype.draw = function(ctx) {
+			var cycles = lcm(this.integers);
+
+			for(var i = 0; i < cycles; i++) {
+				this.updateDraw(ctx);
+			}
+		};
+		SpiroGraph.prototype.updateDraw = function(ctx) {
+			var cx = this.pos[0],
+				cy = this.pos[1];
+
+			for(var i = 0; i < this.angles.length; i++) {
+				cx += (this.radii[i] - this.radii[i+1])*Math.cos(this.angles[i]);
+				cy += (this.radii[i] - this.radii[i+1])*Math.sin(this.angles[i]);
+			}
+
+
+			// draw
+			for(var i = 0; i < this.draws.length; i++) {
+				var radius = this.draws[i][0] * this.radii[this.radii.length-1];
+				var startAngle = this.angles[this.angles.length-1]; //+ this.draws[i][1];
+				var endAngle = startAngle + this.dAngles[this.dAngles.length-1];
+				
+			//	console.log("cx: " + cx + "\ncy: " + cy + "\nsa: " + startAngle + "\nea: " + endAngle);
+
+				ctx.strokeStyle = this.draws[i][2]();
+				ctx.beginPath();
+				ctx.arc(cx, cy, radius, 0, 2*Math.PI);
+				//ctx.arc(cx, cy, radius, startAngle, endAngle);
+				ctx.stroke();
+			}
+
+			// update
+			for(var i = 0; i < this.dAngles.length; i++) {
+				this.angles[i] += this.dAngles[i];
+			}
+		};
+
+		var spiro = new SpiroGraph([400,400],400,[102,51,32],[1,1],[0,0], [[.5,0, function() {return "black";}]]);
+
+		spiro.draw(ctx);
+	})();
+	</script>
+</body>
+</html>
